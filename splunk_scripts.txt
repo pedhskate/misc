@@ -1,0 +1,57 @@
+#Detecting Network and Port Scanning
+#to determine if internal machines are enumerating the network for lateral movement or privesc
+
+#spl search string and source of firewall logs
+index=* sourcetype=firewall
+
+#stats command to list ports and IP addresses being contacted by an internal IP
+| stats dc(dest_port) as num_dest_port dc(dest_ip) as num_dest_ip by src_ip
+
+#filter where the source IP has contacted more than 500 IPs or dst_ports
+| where num_dest_port >500 OR num_dest_ip >500
+
+_______________________________________________________________________________________________
+
+#Detecting Recurring Malware on Host
+#to determine if malware is being properly quarentined
+
+#index and source of Antivirus logs from Symantec 
+index=* sourcetype=symantec:*
+#stats command to determine earliest and latest time of a given malware infection
+| stats count range(_time) as TimeRange by Risk_Name, Computer_Name
+#30 minutes between file signatures being detected 
+| where TimeRange>1800
+#format time to days and hours
+| eval TimeRange_In_Hours = round(TimeRange/3600,2), TimeRange_In_Days = round(TimeRange/3600/24/,2)
+
+________________________________________________________________________________________________
+
+#Finding Large Web Uploads
+#using proxy data to determine if there's data exfil coming from malware or an insider/popped box
+
+#index and source of outbound traffic from proxy data
+index=* sourcetype=proxydata* (i.e.websense*)
+#filtering by anything greater than 35 mb
+| where bytes_out > 3500000
+#piping the output to a readable table
+| table _time src_ip bytes* uri
+
+________________________________________________________________________________________________
+
+#Detecting Brute Force Attacks
+#looking in Microsoft AD logs
+
+#index and source of Windows Security logs. filtering by any user and not users with no name.
+index=* sourcetype=win_security_logs* user=* user!=""
+#stats command to see number of login successes and number of login failures for any user
+| stats count(eval(action="sucess")) as successes cout(eval(action="failure")) as failures by use
+#filter by at least one sucess and more than 100 failures
+| where successes>0 AND failures>100
+
+
+
+
+
+
+
+

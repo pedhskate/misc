@@ -1,0 +1,5 @@
+Splunk User Behaivior Analytics Course Completed
+Detecting Network and Port Scanning
+Detecting Recurring Malware on Host
+Finding Large Web Uploads
+Detecting Brute Force Attacks
